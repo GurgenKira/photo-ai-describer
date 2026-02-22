@@ -88,8 +88,10 @@ export default function IndexScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
+      mediaTypes: "images" as any,
+      quality: 0.5,
+      allowsEditing: true,
+      aspect: [4, 3],
     });
 
     if (!result.canceled) {
@@ -107,7 +109,9 @@ export default function IndexScreen() {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      quality: 0.8,
+      quality: 0.5,
+      allowsEditing: true,
+      aspect: [4, 3],
     });
 
     if (!result.canceled) {
@@ -137,6 +141,13 @@ export default function IndexScreen() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Backend error:", errorText);
+        
+        try {
+          const errorJson = JSON.parse(errorText);
+          Alert.alert("Error", errorJson.error || "Failed to analyze image");
+        } catch {
+          Alert.alert("Error", "Failed to analyze image. Please try again.");
+        }
         throw new Error(`Server error: ${response.status}`);
       }
 

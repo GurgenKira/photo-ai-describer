@@ -134,12 +134,13 @@ Upload and analyze an image
 
 ### Backend Configuration
 - **Port**: Default 3000 (configurable via `.env`)
-- **File Upload Limit**: 10MB
+- **File Upload Limit**: 20MB
 - **Gemini Model**: `gemini-2.5-flash`
 
 ### Frontend Configuration
-- **API URL**: Update in `app/index.tsx` line 49
-- **Image Quality**: Set to 1 (maximum)
+- **API URL**: Update in `app/index.tsx` (search for fetch URL)
+- **Image Quality**: 0.5 (optimized for size)
+- **Image Editing**: Enabled with 4:3 aspect ratio
 - **Media Type**: Images only
 
 ## Development Notes
@@ -170,7 +171,9 @@ If you encounter model errors, try these alternatives:
 - Try alternative model names
 
 ### Image upload fails
-- Check file size (max 10MB)
+- Check file size (max 20MB)
+- Images are automatically compressed to 50% quality
+- Use the crop/edit feature to reduce size further
 - Verify image format (JPEG, PNG)
 - Check backend logs for detailed errors
 

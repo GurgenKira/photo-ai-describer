@@ -40,7 +40,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
 });
 
 // Routes
@@ -100,6 +100,16 @@ app.post('/api/describe', upload.single('image'), async (req, res) => {
 // Error handler
 app.use((error, req, res, next) => {
   console.error('Server error:', error);
+  
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ 
+        success: false,
+        error: 'File too large. Maximum size is 20MB. Please use a smaller image.' 
+      });
+    }
+  }
+  
   res.status(500).json({ 
     success: false,
     error: error.message 

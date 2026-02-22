@@ -4,18 +4,22 @@ An AI-powered mobile application that analyzes and describes images using Google
 
 ## Features
 
-- 📷 Pick images from gallery
-- 🤖 AI-powered image analysis using Google Gemini 2.5 Flash
-- 📝 Detailed image descriptions including objects, colors, setting, and mood
-- ⚡ Real-time processing
-- 📱 Cross-platform mobile support (iOS & Android)
+- 📷 **Pick images from gallery** or take photos with camera
+- 🤖 **AI-powered image analysis** using Google Gemini 2.5 Flash
+- 📝 **Concise descriptions** - Brief, clear summaries (2-3 sentences)
+- 📜 **History feature** - Saves last 20 analyzed images
+- 🎨 **Beautiful modern UI** - Gradient header, card-based design
+- ⚡ **Real-time processing** with loading indicators
+- 📱 **Cross-platform** mobile support (iOS & Android)
+- 🗑️ **Clear history** option
 
 ## Tech Stack
 
 ### Frontend
 - **React Native** with Expo
 - **Expo Router** for navigation
-- **Expo Image Picker** for image selection
+- **Expo Image Picker** for image selection and camera
+- **AsyncStorage** for persistent history
 - **TypeScript**
 
 ### Backend
@@ -170,15 +174,23 @@ If you encounter model errors, try these alternatives:
 - Verify image format (JPEG, PNG)
 - Check backend logs for detailed errors
 
+## Recent Updates (v2.0)
+
+- ✅ Camera capture functionality
+- ✅ Image history with saved descriptions (last 20)
+- ✅ Modern, beautiful UI with gradient design
+- ✅ Concise AI descriptions (2-3 sentences)
+- ✅ Clear history option
+
 ## Future Enhancements
 
-- [ ] Camera capture functionality
-- [ ] Image history and saved descriptions
 - [ ] Multiple language support
 - [ ] Different analysis modes (brief, detailed, creative)
 - [ ] Share functionality
-- [ ] Offline mode with local storage
+- [ ] Export history as PDF/text
 - [ ] Image editing before analysis
+- [ ] Dark mode support
+- [ ] Search within history
 
 ## License
 

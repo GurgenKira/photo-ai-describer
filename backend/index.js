@@ -68,7 +68,7 @@ app.post('/api/describe', upload.single('image'), async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     const result = await model.generateContent([
-      "Describe this image in detail. Include what you see, colors, objects, people, setting, and mood.",
+      "Provide a brief, concise description of this image in 2-3 sentences. Focus on the main subject, key objects, and overall scene. Keep it simple and clear.",
       {
         inlineData: {
           mimeType: req.file.mimetype,

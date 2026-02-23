@@ -33,3 +33,9 @@ dist/
 # Logs
 logs/
 *.log
+
+# Documentation (keep local only)
+ARCHITECTURE.md
+LEARNING_GUIDE.md
+PROFESSOR_SETUP.md
+SECURITY.md

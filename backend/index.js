@@ -7,7 +7,14 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// Load environment variables first
 dotenv.config();
+
+// Validate environment variables
+if (!process.env.GEMINI_API_KEY) {
+  console.error('❌ ERROR: GEMINI_API_KEY is not set in .env file');
+  process.exit(1);
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,9 +45,22 @@ const storage = multer.diskStorage({
   }
 });
 
+// File upload configuration with security limits
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
+  limits: { 
+    fileSize: 20 * 1024 * 1024, // 20MB limit
+    files: 1 // Only allow 1 file per request
+  },
+  fileFilter: (req, file, cb) => {
+    // Only allow image files
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images are allowed.'));
+    }
+  }
 });
 
 // Routes
@@ -79,8 +99,12 @@ app.post('/api/describe', upload.single('image'), async (req, res) => {
 
     const description = result.response.text();
 
-    // Optional: Delete the uploaded file after processing
-    // fs.unlinkSync(imagePath);
+    // Clean up: Delete the uploaded file after processing (security best practice)
+    try {
+      fs.unlinkSync(imagePath);
+    } catch (err) {
+      console.error('Error deleting file:', err);
+    }
 
     res.json({
       success: true,

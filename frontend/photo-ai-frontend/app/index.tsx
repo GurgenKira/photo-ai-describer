@@ -133,7 +133,7 @@ export default function IndexScreen() {
     } as any);
 
     try {
-      const response = await fetch("http://192.168.27.4:3000/api/describe", {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/describe`, {
         method: "POST",
         body: data,
       });

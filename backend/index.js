@@ -1,11 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { BlobServiceClient } from '@azure/storage-blob';
+import { v4 as uuidv4 } from 'uuid';
 
 // Load environment variables first
 dotenv.config();
@@ -16,38 +15,31 @@ if (!process.env.GEMINI_API_KEY) {
   process.exit(1);
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+if (!process.env.AZURE_STORAGE_CONNECTION_STRING) {
+  console.error('❌ ERROR: AZURE_STORAGE_CONNECTION_STRING is not set in .env file');
+  process.exit(1);
+}
+
+if (!process.env.AZURE_STORAGE_CONTAINER_NAME) {
+  console.error('❌ ERROR: AZURE_STORAGE_CONTAINER_NAME is not set in .env file');
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
+const containerClient = blobServiceClient.getContainerClient(process.env.AZURE_STORAGE_CONTAINER_NAME);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Create uploads directory
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
-
-// Configure multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
 // File upload configuration with security limits
 const upload = multer({ 
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: { 
     fileSize: 20 * 1024 * 1024, // 20MB limit
     files: 1 // Only allow 1 file per request
@@ -68,6 +60,16 @@ app.get('/', (req, res) => {
   res.json({ message: 'Photo AI Describer API is running' });
 });
 
+async function ensureContainerExists() {
+  const createResult = await containerClient.createIfNotExists({
+    access: 'blob'
+  });
+
+  if (createResult.succeeded) {
+    console.log(`✅ Created Azure blob container: ${process.env.AZURE_STORAGE_CONTAINER_NAME}`);
+  }
+}
+
 app.post('/api/describe', upload.single('image'), async (req, res) => {
   try {
     console.log('Received image upload request');
@@ -79,10 +81,15 @@ app.post('/api/describe', upload.single('image'), async (req, res) => {
       });
     }
 
-    // Read image file
-    const imagePath = req.file.path;
-    const imageBuffer = fs.readFileSync(imagePath);
-    const base64Image = imageBuffer.toString('base64');
+    const fileExtension = req.file.originalname?.split('.').pop() || 'jpg';
+    const blobName = `${Date.now()}-${uuidv4()}.${fileExtension}`;
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+    await blockBlobClient.uploadData(req.file.buffer, {
+      blobHTTPHeaders: { blobContentType: req.file.mimetype }
+    });
+
+    const base64Image = req.file.buffer.toString('base64');
 
     // Use Gemini to describe the image
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -99,17 +106,11 @@ app.post('/api/describe', upload.single('image'), async (req, res) => {
 
     const description = result.response.text();
 
-    // Clean up: Delete the uploaded file after processing (security best practice)
-    try {
-      fs.unlinkSync(imagePath);
-    } catch (err) {
-      console.error('Error deleting file:', err);
-    }
-
     res.json({
       success: true,
       description: description,
-      filename: req.file.filename
+      filename: blobName,
+      imageUrl: blockBlobClient.url
     });
 
   } catch (error) {
@@ -141,6 +142,13 @@ app.use((error, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-});
+ensureContainerExists()
+  .then(() => {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✅ Server running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('❌ Failed to initialize Azure blob container:', error.message);
+    process.exit(1);
+  });

@@ -1,6 +1,6 @@
 # Photo AI Describer
 
-An AI-powered mobile application that analyzes and describes images using Google's Gemini AI. Built with React Native (Expo) for the frontend and Node.js/Express for the backend.
+An AI-powered mobile application that analyzes and describes images using Google's Gemini AI. Built with React Native (Expo) for the frontend and Node.js/Express for the backend, with cloud storage support using Azure Blob Storage.
 
 ## Features
 
@@ -26,6 +26,7 @@ An AI-powered mobile application that analyzes and describes images using Google
 - **Node.js** with Express
 - **Multer** for file upload handling
 - **Google Generative AI SDK** (Gemini 2.5 Flash)
+- **Azure Blob Storage** for cloud image storage
 - **CORS** enabled for cross-origin requests
 
 ## Project Structure
@@ -40,7 +41,7 @@ photo-ai-describer/
 │   ├── index.js                   # Express server
 │   ├── package.json
 │   ├── .env                       # Environment variables
-│   └── uploads/                   # Uploaded images storage
+│   └── (Azure Blob Storage)       # Cloud image storage
 └── README.md
 ```
 
@@ -69,6 +70,8 @@ npm install
 ```env
 PORT=3000
 GEMINI_API_KEY=your_gemini_api_key_here
+AZURE_STORAGE_CONNECTION_STRING=your_azure_storage_connection_string_here
+AZURE_STORAGE_CONTAINER_NAME=photo-uploads
 ```
 
 4. Start the backend server:
@@ -76,7 +79,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 npm start
 ```
 
-The server will run on `http://localhost:3000`
+The server will run on `http://localhost:3000` locally, and can be deployed to Azure App Service or Render for a public URL.
 
 ### Frontend Setup
 
@@ -90,9 +93,8 @@ cd frontend/photo-ai-frontend
 npm install
 ```
 
-3. Update the API URL in `app/index.tsx`:
-   - Replace `192.168.27.4` with your machine's local IP address
-   - Find your IP: `hostname -I | awk '{print $1}'` (Linux) or `ipconfig getifaddr en0` (Mac)
+3. Create `.env` from `.env.example` in `frontend/photo-ai-frontend` and set:
+   - `EXPO_PUBLIC_API_URL=https://your-backend-name.azurewebsites.net`
 
 4. Start the Expo development server:
 ```bash
@@ -126,7 +128,8 @@ Upload and analyze an image
 {
   "success": true,
   "description": "A detailed description of the image...",
-  "filename": "1234567890-photo.jpg"
+  "filename": "1234567890-photo.jpg",
+  "imageUrl": "https://<storage-account>.blob.core.windows.net/photo-uploads/1234567890-photo.jpg"
 }
 ```
 
@@ -136,20 +139,36 @@ Upload and analyze an image
 - **Port**: Default 3000 (configurable via `.env`)
 - **File Upload Limit**: 20MB
 - **Gemini Model**: `gemini-2.5-flash`
+- **Cloud Storage**: Azure Blob Storage via connection string + container name
 
 ### Frontend Configuration
-- **API URL**: Update in `app/index.tsx` (search for fetch URL)
+- **API URL**: Set `EXPO_PUBLIC_API_URL` in frontend `.env`
 - **Image Quality**: 0.5 (optimized for size)
 - **Image Editing**: Enabled with 4:3 aspect ratio
 - **Media Type**: Images only
 
 ## Development Notes
 
-### Network Configuration
-- Backend must be accessible from your mobile device
-- Use your machine's local IP address (not `localhost`)
-- Ensure both devices are on the same network
-- Check firewall settings if connection fails
+### Cloud Configuration
+- Backend should be deployed (Azure App Service or Render)
+- Configure backend environment variables in your cloud dashboard
+- Use deployed HTTPS URL in `EXPO_PUBLIC_API_URL`
+- Ensure CORS is enabled for your frontend client
+
+## Deployment (Azure App Service)
+
+1. Create an Azure Storage Account and Blob container (for example: `photo-uploads`)
+2. Create an Azure App Service (Node.js runtime)
+3. Deploy backend folder to App Service (Zip Deploy or GitHub Actions)
+4. Set environment variables in App Service:
+   - `GEMINI_API_KEY`
+   - `AZURE_STORAGE_CONNECTION_STRING`
+   - `AZURE_STORAGE_CONTAINER_NAME`
+   - `PORT` (optional, App Service usually injects this)
+5. Open your deployed URL:
+   - `https://<your-app-name>.azurewebsites.net/`
+6. Set frontend `.env`:
+   - `EXPO_PUBLIC_API_URL=https://<your-app-name>.azurewebsites.net`
 
 ### Gemini API Models
 Current model: `gemini-2.5-flash`
